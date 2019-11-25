@@ -1,5 +1,5 @@
 import { V3WebsocketClient } from '@okfe/okex-node';
-import * as config from './config';
+import config from './config/index';
 const wss = new V3WebsocketClient(config.websocekHost);
 
 // websocket 初始化
