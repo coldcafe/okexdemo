@@ -17,7 +17,7 @@ async function main() {
 
 async function sendDing(result){
   if (new Date().getTime() - lastDingTime.getTime() < 120000) return;
-  if (-1 < result.DIF_DEA && result.DIF_DEA < 1) {
+  if (-3 < result.DIF_DEA && result.DIF_DEA < 3) {
     console.log(result);
     const text = `
 ### btc(macd)
