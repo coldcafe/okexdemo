@@ -19,18 +19,31 @@ async function main(name: string, granularity: number) {
 async function sendDing(result){
   if (new Date().getTime() - lastDingTimeMap[result.name].getTime() < 180000) return;
   if (-result.value * 0.0004 < result.MACD && result.MACD < result.value * 0.0004) {
-    console.log(result);
     let xintai = '';
     if (result.DEA > 0) {
-      xintai = '零线以上，DIF与DEA趋近相交';
+      xintai = '零线以上，';
     }
     if (result.DEA < 0) {
-      xintai = '零线以下，DIF与DEA趋近相交';
+      xintai = '零线以下，';
     }
+    if (result.MACD_TEND === 'up' && result.MACD < 0) {
+      xintai += 'DIF准备上穿DEA';
+    }
+    if (result.MACD_TEND === 'up' && result.MACD > 0) {
+      xintai += 'DIF已经上穿DEA';
+    }
+    if (result.MACD_TEND === 'down' && result.MACD > 0) {
+      xintai += 'DIF准备下穿DEA';
+    }
+    if (result.MACD_TEND === 'down' && result.MACD < 0) {
+      xintai += 'DIF已经下穿DEA';
+    }
+    result.xintai = xintai;
+    console.log(result);
     const text = `
 ### MACD(${result.name})
 - 时间: ${result.time}
-- 形态: ${xintai}
+- 形态: ${result.xintai}
 - DIF: ${result.DIF}
 - DEA: ${result.DEA}
 - MACD: ${result.MACD}
@@ -58,14 +71,49 @@ async function macd(name: string, granularity: number) {
     return EMA12 - EMA26_ARR[i];
   });
   const DEA_ARR = calc_EMA(DIF_ARR, 9);
+  const MACD_ARR = DIF_ARR.map((DIF, i) => {
+    return (DIF - DEA_ARR[i]) * 2;
+  });
+  const MACD = MACD_ARR[data.length - 1];
 
+  let lastIntersect = MACD_ARR.length - 1;
+  if (MACD > 0) {
+    for (let i = MACD_ARR.length - 1; i >= 0; i--) {
+      if (MACD_ARR[i] < 0) {
+        lastIntersect = i + 1;
+        break;
+      }
+    }
+  } else {
+    for (let i = MACD_ARR.length - 1; i >= 0; i--) {
+      if (MACD_ARR[i] > 0) {
+        lastIntersect = i + 1;
+        break;
+      }
+    }
+  }
+  let MACD_SELECT = MACD_ARR.slice(lastIntersect);
+  let MACD_SUM = 0;
+  MACD_SELECT.forEach(_M => {
+    MACD_SUM += _M;
+  });
+  const average = MACD_SUM / MACD_SELECT.length;
+  let MACD_TEND = '';
+  if (MACD > average) {
+    MACD_TEND = 'up';
+  } else if (MACD < average) {
+    MACD_TEND = 'down';
+  } else {
+    MACD_TEND = MACD > 0 ? 'up' : 'down';
+  }
   return {
     name,
     value: data[data.length - 1][4],
     time: moment(data[data.length - 1][0]).format('YYYY-MM-DD HH:mm:ss'),
     DIF: DIF_ARR[data.length - 1],
     DEA: DEA_ARR[data.length - 1],
-    MACD: (DIF_ARR[data.length - 1] - DEA_ARR[data.length - 1]) * 2,
+    MACD,
+    MACD_TEND,
   };
 }
 
