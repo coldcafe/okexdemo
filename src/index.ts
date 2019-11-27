@@ -1,4 +1,5 @@
 import * as macd from './macd';
 import * as ws from './ws';
+import * as volume from './volume';
 macd.run();
-// ws.run();
+volume.run();
