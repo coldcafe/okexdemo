@@ -5,18 +5,19 @@ import * as moment from 'moment';
 import dingding from './dingding';
 const pClient = PublicClient(config.urlHost);
 
-let lastDingTime = new Date(0);
+const lastDingTimeMap = {};
 
-async function main() {
+async function main(name: string, granularity: number) {
+  lastDingTimeMap[name] = new Date(0);
   while (1){
-    const result = await macd('BTC-USD-SWAP', 300);
+    const result = await macd(name, granularity);
     await sendDing(result);
     await bluebird.delay(15000);
   }
 }
 
 async function sendDing(result){
-  if (new Date().getTime() - lastDingTime.getTime() < 120000) return;
+  if (new Date().getTime() - lastDingTimeMap[result.name].getTime() < 180000) return;
   if (-3 < result.MACD && result.MACD < 3) {
     console.log(result);
     const text = `
@@ -27,12 +28,22 @@ async function sendDing(result){
 - MACD: ${result.MACD}
 `;
     await dingding(text, 'a672bf9fc4d59176275e12bff0d068a4ac9923fcd7dd5c860e97a2562e9b6836');
-    lastDingTime = new Date();
+    lastDingTimeMap[result.name] = new Date();
+    console.log(lastDingTimeMap);
   }
 }
 
 async function macd(name: string, granularity: number) {
-  const data = await pClient.swap().getCandles(name, { granularity });
+  const nameArr = name.split('-');
+  const type = nameArr[nameArr.length - 1];
+  let request = null;
+  if (type === 'SWAP') {
+    request = pClient.swap();
+  }
+  if (/^\d{6}$/.test(type)) {
+    request = pClient.futures();
+  }
+  const data = await request.getCandles(name, { granularity });
   data.reverse();
   const EMA12_ARR = calc_EMA(data.map(i => i[4]), 12);
   const EMA26_ARR = calc_EMA(data.map(i => i[4]), 26);
@@ -65,5 +76,6 @@ function calc_EMA(data: number[], N: number) {
 }
 
 export function run() {
-  main().catch(err => console.error(err));
+  main('BTC-USD-SWAP', 300).catch(err => console.error(err));
+  main('BSV-USD-191227', 300).catch(err => console.error(err));
 }
