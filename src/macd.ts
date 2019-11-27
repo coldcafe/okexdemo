@@ -20,9 +20,17 @@ async function sendDing(result){
   if (new Date().getTime() - lastDingTimeMap[result.name].getTime() < 180000) return;
   if (-result.value * 0.0004 < result.MACD && result.MACD < result.value * 0.0004) {
     console.log(result);
+    let xintai = '';
+    if (result.DEA > 0) {
+      xintai = '零线以上，DIF与DEA趋近相交';
+    }
+    if (result.DEA < 0) {
+      xintai = '零线以下，DIF与DEA趋近相交';
+    }
     const text = `
 ### MACD(${result.name})
 - 时间: ${result.time}
+- 形态: ${xintai}
 - DIF: ${result.DIF}
 - DEA: ${result.DEA}
 - MACD: ${result.MACD}
