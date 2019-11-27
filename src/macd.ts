@@ -17,14 +17,14 @@ async function main() {
 
 async function sendDing(result){
   if (new Date().getTime() - lastDingTime.getTime() < 120000) return;
-  if (-3 < result.DIF_DEA && result.DIF_DEA < 3) {
+  if (-3 < result.MACD && result.MACD < 3) {
     console.log(result);
     const text = `
 ### btc(macd)
 - 时间: ${result.time}
 - DIF: ${result.DIF}
 - DEA: ${result.DEA}
-- DIF-DEA差: ${result.DIF_DEA}
+- MACD: ${result.MACD}
 `;
     await dingding(text, 'a672bf9fc4d59176275e12bff0d068a4ac9923fcd7dd5c860e97a2562e9b6836');
     lastDingTime = new Date();
@@ -45,7 +45,7 @@ async function macd() {
     time: moment(data[data.length - 1][0]).format('YYYY-MM-DD HH:mm:ss'),
     DIF: DIF_ARR[data.length - 1],
     DEA: DEA_ARR[data.length - 1],
-    DIF_DEA: DIF_ARR[data.length - 1] - DEA_ARR[data.length - 1],
+    MACD: (DIF_ARR[data.length - 1] - DEA_ARR[data.length - 1]) * 2,
   };
 }
 
