@@ -29,7 +29,6 @@ async function sendDing(result){
 `;
     await dingding(text, 'a672bf9fc4d59176275e12bff0d068a4ac9923fcd7dd5c860e97a2562e9b6836');
     lastDingTimeMap[result.name] = new Date();
-    console.log(lastDingTimeMap);
   }
 }
 
