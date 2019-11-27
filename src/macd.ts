@@ -18,7 +18,7 @@ async function main(name: string, granularity: number) {
 
 async function sendDing(result){
   if (new Date().getTime() - lastDingTimeMap[result.name].getTime() < 180000) return;
-  if (-3 < result.MACD && result.MACD < 3) {
+  if (-result.value * 0.0004 < result.MACD && result.MACD < result.value * 0.0004) {
     console.log(result);
     const text = `
 ### MACD(${result.name})
@@ -53,6 +53,7 @@ async function macd(name: string, granularity: number) {
 
   return {
     name,
+    value: data[data.length - 1][4],
     time: moment(data[data.length - 1][0]).format('YYYY-MM-DD HH:mm:ss'),
     DIF: DIF_ARR[data.length - 1],
     DEA: DEA_ARR[data.length - 1],
