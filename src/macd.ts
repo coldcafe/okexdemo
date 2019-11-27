@@ -9,7 +9,7 @@ let lastDingTime = new Date(0);
 
 async function main() {
   while (1){
-    const result = await macd();
+    const result = await macd('BTC-USD-SWAP', 300);
     await sendDing(result);
     await bluebird.delay(15000);
   }
@@ -20,7 +20,7 @@ async function sendDing(result){
   if (-3 < result.MACD && result.MACD < 3) {
     console.log(result);
     const text = `
-### btc(macd)
+### MACD(${result.name})
 - 时间: ${result.time}
 - DIF: ${result.DIF}
 - DEA: ${result.DEA}
@@ -31,8 +31,8 @@ async function sendDing(result){
   }
 }
 
-async function macd() {
-  const data = await pClient.swap().getCandles('BTC-USD-SWAP', { granularity: 300});
+async function macd(name: string, granularity: number) {
+  const data = await pClient.swap().getCandles(name, { granularity });
   data.reverse();
   const EMA12_ARR = calc_EMA(data.map(i => i[4]), 12);
   const EMA26_ARR = calc_EMA(data.map(i => i[4]), 26);
@@ -42,6 +42,7 @@ async function macd() {
   const DEA_ARR = calc_EMA(DIF_ARR, 9);
 
   return {
+    name,
     time: moment(data[data.length - 1][0]).format('YYYY-MM-DD HH:mm:ss'),
     DIF: DIF_ARR[data.length - 1],
     DEA: DEA_ARR[data.length - 1],
