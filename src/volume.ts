@@ -55,7 +55,7 @@ async function main(name: string, granularity: number) {
         last4VolumeSum += volumeMap[name][i].volume;
       }
       let averageVolume = last4VolumeSum / (volumeMap[name].length - 1);
-      if (newData.volume > averageVolume * 3) {
+      if (newData.volume > averageVolume * 5) {
         newData['name'] = name;
         sendDing(newData).catch(err => console.error(err));
       }
@@ -74,8 +74,8 @@ async function sendDing(result){
 - 价格: ${result.close}
 - 交易量： ${result.currency_volume}
 `;
-  await dingding(text, config.dingdingToken);
   lastDingTimeMap[result.name] = new Date();
+  await dingding(text, config.dingdingToken);
 }
 
 export function run() {

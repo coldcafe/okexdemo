@@ -48,8 +48,8 @@ async function sendDing(result){
 - DEA: ${result.DEA}
 - MACD: ${result.MACD}
 `;
-    await dingding(text, config.dingdingToken);
     lastDingTimeMap[result.name] = new Date();
+    await dingding(text, config.dingdingToken);
   }
 }
 
