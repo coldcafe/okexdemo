@@ -6,9 +6,11 @@ import dingding from './dingding';
 const pClient = PublicClient(config.urlHost);
 
 const lastDingTimeMap = {};
+const lastXinTaiMap = {};
 
 async function main(name: string, granularity: number) {
   lastDingTimeMap[name] = new Date(0);
+  lastXinTaiMap[name] = '';
   while (1){
     const result = await macd(name, granularity);
     await sendDing(result);
@@ -38,6 +40,7 @@ async function sendDing(result){
     if (result.MACD_TEND === 'down' && result.MACD < 0) {
       xintai += 'DIF已经下穿DEA';
     }
+    if (lastXinTaiMap[result.name] === xintai) return;
     result.xintai = xintai;
     console.log(result);
     const text = `
@@ -49,6 +52,7 @@ async function sendDing(result){
 - MACD: ${result.MACD}
 `;
     lastDingTimeMap[result.name] = new Date();
+    lastXinTaiMap[result.name] = xintai;
     await dingding(text, config.dingdingToken);
   }
 }
