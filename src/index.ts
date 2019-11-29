@@ -1,5 +1,8 @@
 import * as macd from './macd';
 import * as ws from './ws';
 import * as volume from './volume';
-macd.run();
-volume.run();
+import * as trade from './trade';
+
+// macd.run();
+// volume.run();
+trade.run();
