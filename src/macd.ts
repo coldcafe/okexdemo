@@ -137,5 +137,5 @@ function calc_EMA(data: number[], N: number) {
 
 export function run() {
   main('BTC-USD-SWAP', 300).catch(err => console.error(err));
-  main('BSV-USD-191227', 300).catch(err => console.error(err));
+  // main('BSV-USD-191227', 300).catch(err => console.error(err));
 }
