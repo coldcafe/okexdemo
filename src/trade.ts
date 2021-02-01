@@ -6,33 +6,90 @@ const pClient = PublicClient(config.urlHost);
 
 async function main(name: string, granularity: number) {
   const data = await macd(name, granularity);
-  let balance = 10000;
+  let lastTradeTime;
+  let lastTradePrice;
+  let balance = 50000;
   let fee = 0;
   let btc = 0;
-  data.forEach((item, i) => {
-    if (item.MACD === 0) {
+  function buy(time: string, price: number, num: number) {
+    if (num <= 0) return;
+    balance -= price * num;
+    fee += price * num * 0.0005;
+    btc += num;
+    lastTradeTime = new Date(time);
+    lastTradePrice = price;
+    console.log(dateFormat(time) + ' ' + price + '买入 ' + num, price * btc + balance);
+  }
+  function sell(time: string, price: number, num: number) {
+    if (num <= 0) return;
+    balance += price * num;
+    fee += price * num * 0.0005;
+    btc -= num;
+    lastTradeTime = new Date(time);
+    lastTradePrice = price;
+    console.log(dateFormat(time) + ' ' + price + '卖出 ' + num, price * btc + balance);
+  }
+  function v1(i: number) {
+    if (data[i].MACD === 0) {
       return;
     }
-    if (data[i - 1].MACD * item.MACD < 0) {
-      if (item.DIF < item.DEA) {
-        balance += item.close;
-        fee += item.close * 0.0005;
-        btc -= 1;
-        console.log(item.time + ' ' + item.close + '卖出');
+    if (data[i - 1].DIF * data[i].DIF < 0) {
+      if (data[i].DIF > 0) {
+        if (btc < 1)
+          buy(data[i].time, data[i].close, 1);
       }
-      if (item.DIF > item.DEA) {
-        balance -= parseFloat(item.close);
-        fee += item.close * 0.0005;
-        btc += 1;
-        console.log(item.time + ' ' + item.close + '买入');
+      if (data[i].DIF < 0) {
+        if (btc > 0)
+          sell(data[i].time, data[i].close, btc);
       }
     }
+    if (data[i - 1].MACD * data[i].MACD < 0) {
+      if (data[i].DIF < data[i].DEA) {
+        let num = 0;
+        if (data[i].DIF < 0) {
+          num = btc + 1;
+        } else {
+          num = btc - 1;
+        }
+        sell(data[i].time, data[i].close, num);
+      }
+      if (data[i].DIF > data[i].DEA) {
+        let num = 0;
+        if (data[i].DIF > 0) {
+          num = 2 - btc;
+        } else {
+          num = 1 - btc;
+        }
+        buy(data[i].time, data[i].close, num);
+      }
+    }
+  }
+  function v2(i: number) {
+    if (data[i - 1].DIF * data[i].DIF > 0) {
+      if (btc > 0) {
+        if (new Date().getTime() > lastTradeTime.getTime() + 120000 && data[i].close < lastTradePrice) {
+          sell(data[i].time, data[i].close, btc);
+        }
+      }
+      if (btc < 0) {
+        if (new Date().getTime() > lastTradeTime.getTime() + 120000 && data[i].close > lastTradePrice) {
+          buy(data[i].time, data[i].close, 0 - btc);
+        }
+      }
+    }
+  }
+  data.forEach((item, i) => {
+    if (new Date(item.time).getTime() < new Date('2019-11-29 20:00:00').getTime()) {
+      return;
+    }
+    v1(i);
+    v2(i);
   });
   console.log('余额:' + balance);
   console.log('btc:' + btc);
   console.log('当前价格：' + data[data.length - 1].close);
   console.log('手续费:' + fee);
-  console.log('总计:' + (parseFloat(data[data.length - 1].close) * btc + balance));
+  console.log('总计:' + (data[data.length - 1].close * btc + balance));
 }
 
 async function macd(name: string, granularity: number) {
@@ -45,7 +102,13 @@ async function macd(name: string, granularity: number) {
   if (/^\d{6}$/.test(type)) {
     request = pClient.futures();
   }
-  const data = await request.getCandles(name, { granularity });
+  let end = new Date().toISOString();
+  let data = [];
+  for (let i = 0; i < 10; i++) {
+    const _data = await request.getCandles(name, { granularity, end });
+    data = data.concat(_data);
+    end = _data[_data.length - 1][0];
+  }
   data.reverse();
   const EMA12_ARR = calc_EMA(data.map(i => i[4]), 12);
   const EMA26_ARR = calc_EMA(data.map(i => i[4]), 26);
@@ -72,7 +135,7 @@ async function macd(name: string, granularity: number) {
     //   MACD_TEND = MACD_ARR[i] > 0 ? 'up' : 'down';
     // }
     return {
-      time: moment(item[0]).format('YYYY-MM-DD HH:mm:ss'),
+      time: item[0],
       open: parseFloat(item[1]),
       close: parseFloat(item[4]),
       DIF: DIF_ARR[i],
@@ -118,6 +181,10 @@ function calc_EMA(data: number[], N: number) {
   return result;
 }
 
+function dateFormat(date: string) {
+  return moment(date).format('YYYY-MM-DD HH:mm:ss');
+}
+
 export function run() {
-  main('BTC-USD-SWAP', 1500).catch(err => console.error(err));
+  main('BTC-USD-SWAP', 60).catch(err => console.error(err));
 }

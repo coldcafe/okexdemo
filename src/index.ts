@@ -5,4 +5,5 @@ import * as trade from './trade';
 
 // macd.run();
 // volume.run();
-trade.run();
+// trade.run();
+ws.run();

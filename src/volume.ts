@@ -36,6 +36,7 @@ async function main(name: string, granularity: number) {
     const obj = JSON.parse(message);
     if (obj.table && obj.table.indexOf('swap/candle') === 0) {
       const tData = obj.data[0].candle;
+      console.log(tData);
       const newData = {
         time: moment(tData[0]).format('YYYY-MM-DD HH:mm:ss'),
         close: tData[4],
